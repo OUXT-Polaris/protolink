@@ -54,7 +54,9 @@ function(add_protolink_message PROTO_FILE MESSAGE_NAME)
         ${NANOPB_GENERATOR_PY} --output-dir=${GENERATED_DIR} ${PROTO_FILE}
       DEPENDS nanopb ${PROTO_FILE}
       WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-      COMMENT "Generating ${MESSAGE_NAME}.pb.c and ${MESSAGE_NAME}.pb.h from ${PROTO_FILE}"
+      COMMENT  "Files for nanopb have been generated. 
+        Please copy the files from the directory below to the development environment of the microcontroller.
+        ${CMAKE_INSTALL_PREFIX}/share/${PROJECT_NAME}/nanopb_gen/proto"
     )
     
     add_custom_target(${MESSAGE_NAME}_nanopb ALL DEPENDS ${GENERATED_DIR}/${MESSAGE_NAME}.pb.c ${GENERATED_DIR}/${MESSAGE_NAME}.pb.h)
@@ -71,11 +73,6 @@ function(add_protolink_message PROTO_FILE MESSAGE_NAME)
     install(
       DIRECTORY ${GENERATED_DIR}
       DESTINATION share/${PROJECT_NAME})
-
-    message(NOTICE
-      "Files for nanopb have been generated. 
-      Please copy the files from the directory below to the development environment of the microcontroller.
-      ${CMAKE_INSTALL_PREFIX}/share/${PROJECT_NAME}/nanopb_gen/proto")
   endfunction()
 
   generate_nanopb(${PROTO_FILE} ${MESSAGE_NAME})
