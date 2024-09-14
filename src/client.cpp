@@ -21,7 +21,7 @@ namespace udp
 Client::Client(const std::string & ip_address, const uint16_t port)
 : endpoint(boost::asio::ip::udp::endpoint(
     boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string(ip_address), port))),
-  sock_(io_service_, endpoint)
+  sock_(io_service_, boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), port))
 {
 }
 
