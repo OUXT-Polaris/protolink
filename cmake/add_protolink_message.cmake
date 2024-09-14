@@ -58,6 +58,19 @@ function(add_protolink_message PROTO_FILE MESSAGE_NAME)
     )
     
     add_custom_target(${MESSAGE_NAME}_nanopb ALL DEPENDS ${GENERATED_DIR}/${MESSAGE_NAME}.pb.c ${GENERATED_DIR}/${MESSAGE_NAME}.pb.h)
+
+    install(FILES 
+        ${CMAKE_BINARY_DIR}/nanopb/src/nanopb/pb.h
+        ${CMAKE_BINARY_DIR}/nanopb/src/nanopb/pb_common.c
+        ${CMAKE_BINARY_DIR}/nanopb/src/nanopb/pb_common.h
+        ${CMAKE_BINARY_DIR}/nanopb/src/nanopb/pb_decode.c
+        ${CMAKE_BINARY_DIR}/nanopb/src/nanopb/pb_decode.h
+        ${CMAKE_BINARY_DIR}/nanopb/src/nanopb/pb_encode.c
+        ${CMAKE_BINARY_DIR}/nanopb/src/nanopb/pb_encode.h
+      DESTINATION share/${PROJECT_NAME}/nanopb_gen/proto)
+    install(
+      DIRECTORY ${GENERATED_DIR}
+      DESTINATION share/${PROJECT_NAME})
   endfunction()
 
   generate_nanopb(${PROTO_FILE} ${MESSAGE_NAME})
