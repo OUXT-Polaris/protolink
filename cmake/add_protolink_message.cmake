@@ -22,6 +22,46 @@ function(add_protolink_message PROTO_FILE MESSAGE_NAME)
   )
   target_link_libraries(${MESSAGE_NAME} ${PROTOBUF_LIBRARY})
 
+  include_directories(
+    include
+    ${CMAKE_BINARY_DIR}
+  )
+
+  include(ExternalProject)
+
+  ExternalProject_Add(
+    nanopb
+    GIT_REPOSITORY https://github.com/nanopb/nanopb.git
+    GIT_TAG master
+    PREFIX ${CMAKE_BINARY_DIR}/nanopb
+    CONFIGURE_COMMAND ""  # no configuration required
+    BUILD_COMMAND ""      # no build required
+    INSTALL_COMMAND ""    # no install required
+    UPDATE_DISCONNECTED 1
+  )
+
+  # Path to nanopb_generator.py
+  set(NANOPB_GENERATOR_PY ${CMAKE_BINARY_DIR}/nanopb/src/nanopb/generator/nanopb_generator.py)
+
+  # Custom command to generate .c and .h files from .proto using nanopb_generator.py
+  function(generate_nanopb PROTO_FILE MESSAGE_NAME)
+    set(GENERATED_DIR ${CMAKE_CURRENT_BINARY_DIR}/nanopb_gen)
+    file(MAKE_DIRECTORY ${GENERATED_DIR})
+
+    add_custom_command(
+      OUTPUT ${GENERATED_DIR}/${MESSAGE_NAME}.pb.c ${GENERATED_DIR}/${MESSAGE_NAME}.pb.h
+      COMMAND ${CMAKE_COMMAND} -E env PYTHONPATH=${CMAKE_BINARY_DIR}/nanopb/src/nanopb/generator python3 
+        ${NANOPB_GENERATOR_PY} --output-dir=${GENERATED_DIR} ${PROTO_FILE}
+      DEPENDS nanopb ${PROTO_FILE}
+      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+      COMMENT "Generating ${MESSAGE_NAME}.pb.c and ${MESSAGE_NAME}.pb.h from ${PROTO_FILE}"
+    )
+    
+    add_custom_target(${MESSAGE_NAME}_nanopb ALL DEPENDS ${GENERATED_DIR}/${MESSAGE_NAME}.pb.c ${GENERATED_DIR}/${MESSAGE_NAME}.pb.h)
+  endfunction()
+
+  generate_nanopb(${PROTO_FILE} ${MESSAGE_NAME})
+
   install(TARGETS ${MESSAGE_NAME}
     EXPORT export_${MESSAGE_NAME}
     ARCHIVE DESTINATION lib

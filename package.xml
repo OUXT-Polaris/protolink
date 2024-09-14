@@ -13,6 +13,7 @@
   <depend>boost</depend>
   <depend>protobuf-dev</depend>
   <depend>protobuf</depend>
+  <depend>libnanopb-dev</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ouxt_lint_common</test_depend>
