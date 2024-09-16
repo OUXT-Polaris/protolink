@@ -44,8 +44,9 @@ function(add_protolink_message PROTO_FILE MESSAGE_NAME)
   set(NANOPB_GENERATOR_PY ${CMAKE_BINARY_DIR}/nanopb/src/nanopb/generator/nanopb_generator.py)
 
   # Custom command to generate .c and .h files from .proto using nanopb_generator.py
-  function(generate_nanopb PROTO_FILE MESSAGE_NAME)
-    set(GENERATED_DIR ${CMAKE_CURRENT_BINARY_DIR}/nanopb_gen)
+  function(generate_nanopb_for_stm32cubeide PROTO_FILE MESSAGE_NAME)
+    set(GENERATED_DIR ${CMAKE_CURRENT_BINARY_DIR}/nanopb_gen/STM32CubeIDE)
+    file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/nanopb_gen)
     file(MAKE_DIRECTORY ${GENERATED_DIR})
 
     add_custom_command(
@@ -57,26 +58,31 @@ function(add_protolink_message PROTO_FILE MESSAGE_NAME)
     )
 
     message(NOTICE "Files for nanopb have been generated. 
-      Please copy the files from the directory below to the development environment of the microcontroller.
-      ${CMAKE_INSTALL_PREFIX}/share/${PROJECT_NAME}/nanopb_gen/proto")
+      Please copy the files from the directory below to the development environment of the microcontroller. (STM32 CubeIDE)
+      ${CMAKE_INSTALL_PREFIX}/share/${PROJECT_NAME}/nanopb_gen/STM32CubeIDE")
     
     add_custom_target(${MESSAGE_NAME}_nanopb ALL DEPENDS ${GENERATED_DIR}/${MESSAGE_NAME}.pb.c ${GENERATED_DIR}/${MESSAGE_NAME}.pb.h)
-    
+
     install(FILES 
-        ${CMAKE_BINARY_DIR}/nanopb/src/nanopb/pb.h
-        ${CMAKE_BINARY_DIR}/nanopb/src/nanopb/pb_common.c
-        ${CMAKE_BINARY_DIR}/nanopb/src/nanopb/pb_common.h
-        ${CMAKE_BINARY_DIR}/nanopb/src/nanopb/pb_decode.c
-        ${CMAKE_BINARY_DIR}/nanopb/src/nanopb/pb_decode.h
-        ${CMAKE_BINARY_DIR}/nanopb/src/nanopb/pb_encode.c
-        ${CMAKE_BINARY_DIR}/nanopb/src/nanopb/pb_encode.h
-      DESTINATION share/${PROJECT_NAME}/nanopb_gen/proto)
-    install(
-      DIRECTORY ${GENERATED_DIR}
-      DESTINATION share/${PROJECT_NAME})
+      ${CMAKE_BINARY_DIR}/nanopb/src/nanopb/pb.h
+      ${CMAKE_BINARY_DIR}/nanopb/src/nanopb/pb_common.h
+      ${CMAKE_BINARY_DIR}/nanopb/src/nanopb/pb_decode.h
+      ${CMAKE_BINARY_DIR}/nanopb/src/nanopb/pb_encode.h
+      DESTINATION share/${PROJECT_NAME}/nanopb_gen/STM32CubeIDE/Inc)
+    install(FILES
+      ${GENERATED_DIR}/proto/${MESSAGE_NAME}.pb.h
+      DESTINATION share/${PROJECT_NAME}/nanopb_gen/STM32CubeIDE/Inc/proto)
+    install(FILES 
+      ${CMAKE_BINARY_DIR}/nanopb/src/nanopb/pb_common.c
+      ${CMAKE_BINARY_DIR}/nanopb/src/nanopb/pb_decode.c
+      ${CMAKE_BINARY_DIR}/nanopb/src/nanopb/pb_encode.c
+      DESTINATION share/${PROJECT_NAME}/nanopb_gen/STM32CubeIDE/Src)
+    install(FILES
+      ${GENERATED_DIR}/proto/${MESSAGE_NAME}.pb.c
+      DESTINATION share/${PROJECT_NAME}/nanopb_gen/STM32CubeIDE/Src/proto)
   endfunction()
 
-  generate_nanopb(${PROTO_FILE} ${MESSAGE_NAME})
+  generate_nanopb_for_stm32cubeide(${PROTO_FILE} ${MESSAGE_NAME})
 
   install(TARGETS ${MESSAGE_NAME}
     EXPORT export_${MESSAGE_NAME}
