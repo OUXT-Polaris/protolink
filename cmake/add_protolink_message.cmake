@@ -29,16 +29,19 @@ function(add_protolink_message PROTO_FILE MESSAGE_NAME)
 
   include(ExternalProject)
 
-  ExternalProject_Add(
-    nanopb
-    GIT_REPOSITORY https://github.com/nanopb/nanopb.git
-    GIT_TAG master
-    PREFIX ${CMAKE_BINARY_DIR}/nanopb
-    CONFIGURE_COMMAND ""  # no configuration required
-    BUILD_COMMAND ""      # no build required
-    INSTALL_COMMAND ""    # no install required
-    UPDATE_DISCONNECTED 1
-  )
+  if(TARGET nanopb)
+  else()
+    ExternalProject_Add(
+      nanopb
+      GIT_REPOSITORY https://github.com/nanopb/nanopb.git
+      GIT_TAG master
+      PREFIX ${CMAKE_BINARY_DIR}/nanopb
+      CONFIGURE_COMMAND ""  # no configuration required
+      BUILD_COMMAND ""      # no build required
+      INSTALL_COMMAND ""    # no install required
+      UPDATE_DISCONNECTED 1
+    )
+  endif()
 
   # Path to nanopb_generator.py
   set(NANOPB_GENERATOR_PY ${CMAKE_BINARY_DIR}/nanopb/src/nanopb/generator/nanopb_generator.py)
@@ -49,19 +52,26 @@ function(add_protolink_message PROTO_FILE MESSAGE_NAME)
     file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/nanopb_gen)
     file(MAKE_DIRECTORY ${GENERATED_DIR})
 
+    file(COPY ${PROTO_FILE} DESTINATION ${GENERATED_DIR}/proto)
+
     add_custom_command(
       OUTPUT ${GENERATED_DIR}/${MESSAGE_NAME}.pb.c ${GENERATED_DIR}/${MESSAGE_NAME}.pb.h
       COMMAND ${CMAKE_COMMAND} -E env PYTHONPATH=${CMAKE_BINARY_DIR}/nanopb/src/nanopb/generator python3 
         ${NANOPB_GENERATOR_PY} --output-dir=${GENERATED_DIR} ${PROTO_FILE}
       DEPENDS nanopb ${PROTO_FILE}
-      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+      WORKING_DIRECTORY ${GENERATED_DIR}
     )
 
     message(NOTICE "Files for nanopb have been generated. 
+      Message name : ${MESSAGE_NAME}
       Please copy the files from the directory below to the development environment of the microcontroller. (STM32 CubeIDE)
       ${CMAKE_INSTALL_PREFIX}/share/${PROJECT_NAME}/nanopb_gen/STM32CubeIDE")
     
-    add_custom_target(${MESSAGE_NAME}_nanopb ALL DEPENDS ${GENERATED_DIR}/${MESSAGE_NAME}.pb.c ${GENERATED_DIR}/${MESSAGE_NAME}.pb.h)
+    add_custom_target(${MESSAGE_NAME}_nanopb_stm32cubeide ALL DEPENDS ${GENERATED_DIR}/${MESSAGE_NAME}.pb.c ${GENERATED_DIR}/${MESSAGE_NAME}.pb.h)
+    if(TARGET ${MESSAGE_NAME}__from_ros)
+      add_dependencies(${MESSAGE_NAME}_nanopb_stm32cubeide ${MESSAGE_NAME}__from_ros)
+    else()
+    endif()
 
     install(FILES 
       ${CMAKE_BINARY_DIR}/nanopb/src/nanopb/pb.h
@@ -91,4 +101,36 @@ function(add_protolink_message PROTO_FILE MESSAGE_NAME)
     RUNTIME DESTINATION bin
     INCLUDES DESTINATION include)
 
+endfunction()
+
+function(add_protolink_message_from_ros_message MESSAGE_PACKAGE MESSAGE_TYPE)
+  set(GENERATED_DIR ${CMAKE_CURRENT_BINARY_DIR}/proto_files)
+  file(MAKE_DIRECTORY ${GENERATED_DIR})
+
+  set(PROTO_FILE ${GENERATED_DIR}/${MESSAGE_PACKAGE}__${MESSAGE_TYPE}.proto)
+
+  find_package(protolink REQUIRED)
+
+  add_custom_command(
+    OUTPUT ${PROTO_FILE}
+    COMMAND ${CMAKE_COMMAND} ${protolink_DIR}/generate_proto.py ${MESSAGE_PACKAGE}/${MESSAGE_TYPE} ${PROTO_FILE}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+  )
+
+  add_custom_target(${MESSAGE_PACKAGE}__${MESSAGE_TYPE}_from_ros ALL DEPENDS ${PROTO_FILE})
+
+  include(FindProtobuf REQUIRED)
+
+  protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS ${PROTO_FILE})
+  include_directories(
+    include
+    ${CMAKE_BINARY_DIR}
+  )
+  add_library(${MESSAGE_PACKAGE}__${MESSAGE_TYPE}_proto SHARED ${PROTO_SRCS})
+  add_dependencies(${MESSAGE_PACKAGE}__${MESSAGE_TYPE}_proto ${MESSAGE_PACKAGE}__${MESSAGE_TYPE}_from_ros)
+  target_link_libraries(${MESSAGE_PACKAGE}__${MESSAGE_TYPE}_proto ${PROTOBUF_LIBRARY})
+
+  # install(FILES ${PROTO_FILE} DESTINATION ${CMAKE_INSTALL_PREFIX}/proto_files)
+
+  # add_protolink_message(${PROTO_FILE} ${MESSAGE_PACKAGE}__${MESSAGE_TYPE})
 endfunction()
