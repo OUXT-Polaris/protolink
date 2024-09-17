@@ -53,11 +53,12 @@ function(add_protolink_message PROTO_FILE MESSAGE_NAME)
     file(MAKE_DIRECTORY ${GENERATED_DIR})
 
     file(COPY ${PROTO_FILE} DESTINATION ${GENERATED_DIR}/proto)
+    get_filename_component(PROTO_FILENAME ${PROTO_FILE} NAME)
 
     add_custom_command(
       OUTPUT ${GENERATED_DIR}/${MESSAGE_NAME}.pb.c ${GENERATED_DIR}/${MESSAGE_NAME}.pb.h
       COMMAND ${CMAKE_COMMAND} -E env PYTHONPATH=${CMAKE_BINARY_DIR}/nanopb/src/nanopb/generator python3 
-        ${NANOPB_GENERATOR_PY} --output-dir=${GENERATED_DIR} ${PROTO_FILE}
+        ${NANOPB_GENERATOR_PY} --output-dir=${GENERATED_DIR} proto/${PROTO_FILENAME}
       DEPENDS nanopb ${PROTO_FILE}
       WORKING_DIRECTORY ${GENERATED_DIR}
     )
@@ -136,5 +137,5 @@ function(add_protolink_message_from_ros_message MESSAGE_PACKAGE MESSAGE_TYPE)
     RUNTIME DESTINATION bin
     INCLUDES DESTINATION include)
 
-  # add_protolink_message(${PROTO_FILE} ${MESSAGE_PACKAGE}__${MESSAGE_TYPE})
+  add_protolink_message(${PROTO_FILE} ${MESSAGE_PACKAGE}__${MESSAGE_TYPE})
 endfunction()
