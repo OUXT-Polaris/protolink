@@ -22,6 +22,9 @@ if(BUILD_TESTING)
   set(ament_cmake_copyright_FOUND TRUE)
   set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
+
+  include(cmake/add_protolink_message.cmake)
+  add_protolink_message_from_ros_message("std_msgs" "String")
 endif()
 
 ament_auto_package(CONFIG_EXTRAS "${PROJECT_NAME}_ament_cmake-extras.cmake")

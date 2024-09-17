@@ -110,15 +110,22 @@ function(add_protolink_message_from_ros_message MESSAGE_PACKAGE MESSAGE_TYPE)
 
   set(PROTO_FILE ${GENERATED_DIR}/${MESSAGE_PACKAGE}__${MESSAGE_TYPE}.proto)
 
-  find_package(protolink REQUIRED)
+  if(${PROJECT_NAME} STREQUAL "protolink")
+    set(GENERATE_PROTO_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/cmake/generate_proto.py)
+  else()
+    find_package(protolink REQUIRED)
+    set(GENERATE_PROTO_SCRIPT ${protolink_DIR}/generate_proto.py)
+  endif()
 
   add_custom_command(
     OUTPUT ${PROTO_FILE}
-    COMMAND python3 ${protolink_DIR}/generate_proto.py ${MESSAGE_PACKAGE}/${MESSAGE_TYPE} ${PROTO_FILE}
+    COMMAND python3 ${GENERATE_PROTO_SCRIPT} ${MESSAGE_PACKAGE}/${MESSAGE_TYPE} ${PROTO_FILE}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   )
 
   add_custom_target(${MESSAGE_PACKAGE}__${MESSAGE_TYPE}_from_ros ALL DEPENDS ${PROTO_FILE})
+
+  message("Generated protobuf message => ${PROTO_FILE}")
 
   include(FindProtobuf REQUIRED)
 
@@ -137,5 +144,5 @@ function(add_protolink_message_from_ros_message MESSAGE_PACKAGE MESSAGE_TYPE)
     RUNTIME DESTINATION bin
     INCLUDES DESTINATION include)
 
-  add_protolink_message(${PROTO_FILE} ${MESSAGE_PACKAGE}__${MESSAGE_TYPE})
+  # add_protolink_message(${PROTO_FILE} ${MESSAGE_PACKAGE}__${MESSAGE_TYPE})
 endfunction()
