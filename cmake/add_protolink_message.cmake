@@ -113,7 +113,7 @@ function(add_protolink_message_from_ros_message MESSAGE_PACKAGE MESSAGE_TYPE)
 
   add_custom_command(
     OUTPUT ${PROTO_FILE}
-    COMMAND ${CMAKE_COMMAND} ${protolink_DIR}/generate_proto.py ${MESSAGE_PACKAGE}/${MESSAGE_TYPE} ${PROTO_FILE}
+    COMMAND python3 ${protolink_DIR}/generate_proto.py ${MESSAGE_PACKAGE}/${MESSAGE_TYPE} ${PROTO_FILE}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   )
 
@@ -127,10 +127,14 @@ function(add_protolink_message_from_ros_message MESSAGE_PACKAGE MESSAGE_TYPE)
     ${CMAKE_BINARY_DIR}
   )
   add_library(${MESSAGE_PACKAGE}__${MESSAGE_TYPE}_proto SHARED ${PROTO_SRCS})
-  add_dependencies(${MESSAGE_PACKAGE}__${MESSAGE_TYPE}_proto ${MESSAGE_PACKAGE}__${MESSAGE_TYPE}_from_ros)
   target_link_libraries(${MESSAGE_PACKAGE}__${MESSAGE_TYPE}_proto ${PROTOBUF_LIBRARY})
 
-  # install(FILES ${PROTO_FILE} DESTINATION ${CMAKE_INSTALL_PREFIX}/proto_files)
+  install(TARGETS ${MESSAGE_PACKAGE}__${MESSAGE_TYPE}_proto
+    EXPORT export_${MESSAGE_PACKAGE}__${MESSAGE_TYPE}_proto
+    ARCHIVE DESTINATION lib
+    LIBRARY DESTINATION lib
+    RUNTIME DESTINATION bin
+    INCLUDES DESTINATION include)
 
   # add_protolink_message(${PROTO_FILE} ${MESSAGE_PACKAGE}__${MESSAGE_TYPE})
 endfunction()
