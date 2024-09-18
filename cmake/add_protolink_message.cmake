@@ -107,23 +107,27 @@ endfunction()
 function(add_protolink_message_from_ros_message MESSAGE_PACKAGE MESSAGE_TYPE)
   set(GENERATED_DIR ${CMAKE_CURRENT_BINARY_DIR}/proto_files)
   file(MAKE_DIRECTORY ${GENERATED_DIR})
+  set(CONVERSION_HEADER_FILE conversion_${MESSAGE_PACKAGE}__${MESSAGE_TYPE}.hpp)
 
   set(PROTO_FILE ${GENERATED_DIR}/${MESSAGE_PACKAGE}__${MESSAGE_TYPE}.proto)
 
   if(${PROJECT_NAME} STREQUAL "protolink")
     set(GENERATE_PROTO_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/cmake/generate_proto.py)
+    set(JINJA_TEMPLATE ${CMAKE_CURRENT_SOURCE_DIR}/cmake/template_converter.hpp.jinja)
   else()
     find_package(protolink REQUIRED)
     set(GENERATE_PROTO_SCRIPT ${protolink_DIR}/generate_proto.py)
+    set(JINJA_TEMPLATE ${protolink_DIR}/template_converter.hpp.jinja)
   endif()
 
   add_custom_command(
-    OUTPUT ${PROTO_FILE}
-    COMMAND python3 ${GENERATE_PROTO_SCRIPT} ${MESSAGE_PACKAGE}/${MESSAGE_TYPE} ${PROTO_FILE}
+    OUTPUT ${PROTO_FILE} ${CONVERSION_HEADER_FILE}
+    COMMAND python3 ${GENERATE_PROTO_SCRIPT} ${MESSAGE_PACKAGE}/${MESSAGE_TYPE} ${PROTO_FILE} ${CONVERSION_HEADER_FILE}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    DEPENDS ${GENERATE_PROTO_SCRIPT} ${JINJA_TEMPLATE}
   )
 
-  add_custom_target(${MESSAGE_PACKAGE}__${MESSAGE_TYPE}_from_ros ALL DEPENDS ${PROTO_FILE})
+  add_custom_target(${MESSAGE_PACKAGE}__${MESSAGE_TYPE}_from_ros ALL DEPENDS ${PROTO_FILE} ${CONVERSION_HEADER_FILE})
 
   message("Generated protobuf message => ${PROTO_FILE}")
 

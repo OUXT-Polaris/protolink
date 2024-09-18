@@ -13,11 +13,10 @@
 // limitations under the License.
 
 #include <gtest/gtest.h>
-#include <std_msgs__String.pb.h>
 
+#include <conversion_std_msgs__String.hpp>
 #include <protolink/client.hpp>
 #include <protolink/type_adapter.hpp>
-#include <std_msgs/msg/string.hpp>
 
 int main(int argc, char ** argv)
 {

@@ -103,7 +103,9 @@ def to_proto_message_definition(field_type, field_name, message_index):
 
 
 def get_message_structure(msg_type_name, output_file, header_file):
-    env = Environment(loader=FileSystemLoader(searchpath="./"))
+    env = Environment(
+        loader=FileSystemLoader(searchpath=os.path.dirname(os.path.abspath(__file__)))
+    )
     template = env.get_template("template_converter.hpp.jinja")
     data = {
         "include_guard": "CONVERSION_"
