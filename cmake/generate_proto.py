@@ -58,29 +58,38 @@ def to_proto_type(ros2_message_field_type):
     raise Exception("Unspoorted built-in type.")
 
 
-def append_members_for_template(field_type, field_name, members):
+def append_conversions_for_template(namespace, field_type, conversions):
     if "/" in field_type:
-        return members
-    else:
-        members[field_name] = field_type
-        return members
-
-
-def append_conversions_for_template(field_type, field_name, conversions):
-    if "/" in field_type:
-        conversions.append(
-            {
-                "proto": "protolink__"
-                + field_type.split("/")[0]
-                + "__"
-                + field_type.split("/")[1]
-                + "::"
-                + field_type.split("/")[0]
-                + "__"
-                + field_type.split("/")[1],
-                "ros2": field_type.split("/")[0] + "::msg::" + field_type.split("/")[1],
-            }
-        )
+        if namespace != "":
+            builtin_types = []
+            for field in get_message_fields(field_type):
+                builtin_types.append(field)
+            conversions.append(
+                {
+                    "proto": namespace
+                    + "::"
+                    + field_type.split("/")[0]
+                    + "__"
+                    + field_type.split("/")[1],
+                    "ros2": field_type.split("/")[0]
+                    + "::msg::"
+                    + field_type.split("/")[1],
+                    "members": {"builtin_types": builtin_types},
+                }
+            )
+        else:
+            builtin_types = []
+            for field in get_message_fields(field_type):
+                builtin_types.append(field)
+            conversions.append(
+                {
+                    "proto": field_type.split("/")[0] + "__" + field_type.split("/")[1],
+                    "ros2": field_type.split("/")[0]
+                    + "::msg::"
+                    + field_type.split("/")[1],
+                    "members": {"builtin_types": builtin_types},
+                }
+            )
         return conversions
     else:
         return conversions
@@ -136,6 +145,8 @@ def get_message_structure(msg_type_name, output_file, header_file, source_file):
     )
     template_header = env.get_template("template_converter.hpp.jinja")
     template_cpp = env.get_template("template_converter.cpp.jinja")
+    conversions = append_conversions_for_template("", msg_type_name, [])
+
     conversions = [
         {
             "proto": "protolink__"
@@ -149,6 +160,7 @@ def get_message_structure(msg_type_name, output_file, header_file, source_file):
             "ros2": msg_type_name.split("/")[0]
             + "::msg::"
             + msg_type_name.split("/")[1],
+            "members": [],
         }
     ]
     data = {
@@ -168,8 +180,6 @@ def get_message_structure(msg_type_name, output_file, header_file, source_file):
         + ".pb.h",
         "conversion_header": header_file,
     }
-
-    members = {}
 
     fields = get_message_fields(msg_type_name)
 
@@ -198,9 +208,17 @@ def get_message_structure(msg_type_name, output_file, header_file, source_file):
 
     for field_name, field_type in fields.items():
         print(f"  - {field_name}: {field_type} -> {to_proto_type(field_type)}")
-        members = append_members_for_template(field_type, field_name, members)
         conversions = append_conversions_for_template(
-            field_type, field_name, conversions
+            "protolink__"
+            + msg_type_name.split("/")[0]
+            + "__"
+            + msg_type_name.split("/")[1]
+            + "::"
+            + msg_type_name.split("/")[0]
+            + "__"
+            + msg_type_name.split("/")[1],
+            field_type,
+            conversions,
         )
         proto_string = proto_string + to_proto_message_definition(
             field_type, field_name, message_index
@@ -212,8 +230,6 @@ def get_message_structure(msg_type_name, output_file, header_file, source_file):
     print(proto_string)
     with open(output_file, mode="w") as f:
         f.write(proto_string)
-
-    data["members"] = members
 
     with open(header_file, "w") as f:
         f.write(template_header.render(data))

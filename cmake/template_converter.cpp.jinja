@@ -4,10 +4,9 @@
 {{ conversion.ros2 }} convert(const {{ conversion.proto }} & message)
 {
     {{ conversion.ros2 }} ros2_message;
-    {% for member in members %}
-    ros2_message.{{member}} = message.{{member}}();
+    {% for builtin_type in conversion.members.builtin_types %}
+    ros2_message.{{builtin_type}} = message.{{builtin_type}}();
     {% endfor %}
     return ros2_message;
 }
 {% endfor %}
-
