@@ -20,10 +20,6 @@
 
 namespace protolink
 {
-template <typename MessageType>
-using is_ros2_message =
-  typename std::enable_if_t<rosidl_generator_traits::is_message<MessageType>::value, int>;
-
 namespace udp_protocol
 {
 class Client

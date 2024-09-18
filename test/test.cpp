@@ -16,6 +16,7 @@
 #include <std_msgs__String.pb.h>
 
 #include <protolink/client.hpp>
+#include <protolink/type_adapter.hpp>
 #include <std_msgs/msg/string.hpp>
 
 int main(int argc, char ** argv)
@@ -33,3 +34,56 @@ TEST(UDP, send_proto)
 }
 
 TEST(MQTT, connect) { protolink::mqtt_protocol::Client("127.0.0.1", "protolink", "hello"); }
+
+using AdaptedType =
+  rclcpp::TypeAdapter<protolink__std_msgs__String::std_msgs__String, std_msgs::msg::String>;
+
+class PubNode : public rclcpp::Node
+{
+public:
+  explicit PubNode(const rclcpp::NodeOptions & options) : Node("test", options)
+  {
+    publisher_ = create_publisher<AdaptedType>("string", 1);
+  }
+  void publish(const protolink__std_msgs__String::std_msgs__String & proto)
+  {
+    publisher_->publish(proto);
+  }
+
+private:
+  std::shared_ptr<rclcpp::Publisher<AdaptedType>> publisher_;
+};
+
+class SubNode : public rclcpp::Node
+{
+public:
+  explicit SubNode(
+    const rclcpp::NodeOptions & options,
+    const std::function<void(const protolink__std_msgs__String::std_msgs__String &)> function)
+  : Node("test", options)
+  {
+    subscriber_ = create_subscription<AdaptedType>("string", 1, function);
+  }
+
+private:
+  std::shared_ptr<rclcpp::Subscription<AdaptedType>> subscriber_;
+};
+
+TEST(TypeAdapter, pub_sub)
+{
+  rclcpp::init(0, nullptr);
+  rclcpp::NodeOptions options;
+  options.use_intra_process_comms(true);
+  bool proto_recieved = false;
+  auto sub_node = std::make_shared<SubNode>(
+    options,
+    [&](const protolink__std_msgs__String::std_msgs__String & proto) { proto_recieved = true; });
+  auto pub_node = std::make_shared<PubNode>(options);
+  // pub_node->publish();
+  rclcpp::executors::SingleThreadedExecutor exec;
+  exec.add_node(sub_node);
+  exec.add_node(pub_node);
+  exec.spin_some();
+  rclcpp::shutdown();
+  EXPECT_TRUE(proto_recieved);
+}

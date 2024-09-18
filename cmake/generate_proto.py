@@ -2,6 +2,8 @@ import importlib
 import sys
 from rosidl_parser.definition import NamespacedType
 import re
+from jinja2 import Environment, FileSystemLoader
+import os
 
 
 def is_sequence_type(ros2_message_field_type):
@@ -100,7 +102,36 @@ def to_proto_message_definition(field_type, field_name, message_index):
         )
 
 
-def get_message_structure(msg_type_name, output_file):
+def get_message_structure(msg_type_name, output_file, header_file):
+    env = Environment(loader=FileSystemLoader(searchpath="./"))
+    template = env.get_template("template_converter.hpp.jinja")
+    data = {
+        "include_guard": "CONVERSION_"
+        + msg_type_name.split("/")[0].upper()
+        + "__"
+        + msg_type_name.split("/")[1].upper()
+        + "_HPP",
+        "ros2_message": msg_type_name.split("/")[0]
+        + "::msg::"
+        + msg_type_name.split("/")[1],
+        "proto_message": "protolink__"
+        + msg_type_name.split("/")[0]
+        + "__"
+        + msg_type_name.split("/")[1]
+        + "::"
+        + msg_type_name.split("/")[0]
+        + "__"
+        + msg_type_name.split("/")[1],
+        "ros2_header": msg_type_name.split("/")[0]
+        + "/msg/"
+        + msg_type_name.split("/")[1].lower()
+        + ".hpp",
+        "proto_header": msg_type_name.split("/")[0]
+        + "__"
+        + msg_type_name.split("/")[1]
+        + ".pb.h",
+    }
+
     fields = get_message_fields(msg_type_name)
 
     print(f"Message: {msg_type_name}")
@@ -136,15 +167,23 @@ def get_message_structure(msg_type_name, output_file):
 
     print("\nProto file => \n")
     print(proto_string)
-    with open(output_file, mode='w') as f:
+    with open(output_file, mode="w") as f:
         f.write(proto_string)
+
+    with open(header_file, "w") as f:
+        f.write(template.render(data))
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
-        print("Usage: python get_ros_message_structure.py <message_type>")
-        print("Example: python get_ros_message_structure.py std_msgs/String std_msgs__String.proto")
+    if len(sys.argv) != 4:
+        print(
+            "Usage: python3 generate_proto.py <message_type> <proto file> <conversion header file>"
+        )
+        print(
+            "Example: python3 generate_proto.py std_msgs/String std_msgs__String.proto conversion_std_msgs__String.hpp"
+        )
     else:
         msg_type_name = sys.argv[1]
         output_file = sys.argv[2]
-        get_message_structure(msg_type_name, output_file)
+        header_file = sys.argv[3]
+        get_message_structure(msg_type_name, output_file, header_file)
