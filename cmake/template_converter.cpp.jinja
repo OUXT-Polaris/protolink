@@ -9,6 +9,7 @@
     {% endfor %}
 
     {% for user_type in conversion.members.user_types %}
+    ros2_message.{{user_type}} = convert(message.{{user_type}}());
     {% endfor %}
 
     return ros2_message;

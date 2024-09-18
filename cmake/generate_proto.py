@@ -91,7 +91,7 @@ def append_conversions_for_template(namespace, field_type, conversions):
             fields = get_message_fields(field_type)
             for field_name_in_child, field_type_in_child in fields.items():
                 if "/" in field_type_in_child:
-                    pass
+                    user_types.append(field_name_in_child)
                 else:
                     builtin_types.append(field_name_in_child)
             conversions.append(

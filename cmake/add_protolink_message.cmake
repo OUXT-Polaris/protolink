@@ -139,8 +139,9 @@ function(add_protolink_message_from_ros_message MESSAGE_PACKAGE MESSAGE_TYPE)
     include
     ${CMAKE_BINARY_DIR}
   )
+  find_package(rclcpp REQUIRED)
   add_library(${MESSAGE_PACKAGE}__${MESSAGE_TYPE}_proto SHARED ${PROTO_SRCS} ${CONVERSION_SOURCE_FILE})
-  ament_target_dependencies(${MESSAGE_PACKAGE}__${MESSAGE_TYPE}_proto ${MESSAGE_PACKAGE})
+  ament_target_dependencies(${MESSAGE_PACKAGE}__${MESSAGE_TYPE}_proto ${MESSAGE_PACKAGE} rclcpp)
   target_link_libraries(${MESSAGE_PACKAGE}__${MESSAGE_TYPE}_proto ${PROTOBUF_LIBRARY})
 
   install(TARGETS ${MESSAGE_PACKAGE}__${MESSAGE_TYPE}_proto

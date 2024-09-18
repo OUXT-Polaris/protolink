@@ -16,7 +16,6 @@
 
 #include <conversion_std_msgs__String.hpp>
 #include <protolink/client.hpp>
-#include <protolink/type_adapter.hpp>
 
 int main(int argc, char ** argv)
 {
