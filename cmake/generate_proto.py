@@ -47,7 +47,7 @@ def to_proto_type(ros2_message_field_type):
         return ros2_message_field_type
     elif ros2_message_field_type == "float32":
         return "float"
-    elif ros2_message_field_type == "float64":
+    elif ros2_message_field_type == "float64" or ros2_message_field_type == "double":
         return "double"
     elif is_sequence_type(ros2_message_field_type) != None:
         return "repeated " + to_proto_type(is_sequence_type(ros2_message_field_type))
@@ -55,7 +55,7 @@ def to_proto_type(ros2_message_field_type):
         if get_message_fields(ros2_message_field_type) != None:
             return ros2_message_field_type
         raise Exception("Failed to get data infomation, please check ros2 prefix path.")
-    raise Exception("Unspoorted built-in type.")
+    raise Exception("Unspoorted built-in type : " + ros2_message_field_type)
 
 
 def append_conversions_for_template(namespace, field_type, conversions):
@@ -169,6 +169,14 @@ def get_message_structure(msg_type_name, output_file, header_file, source_file):
     template_header = env.get_template("template_converter.hpp.jinja")
     template_cpp = env.get_template("template_converter.cpp.jinja")
     conversions = append_conversions_for_template("", msg_type_name, [])
+
+    ros2_message_header = ""
+    for splited in re.split(r"(?=[A-Z])", msg_type_name.split("/")[1]):
+        if ros2_message_header == "":
+            ros2_message_header = splited.lower()
+        else:
+            ros2_message_header = ros2_message_header + "_" + splited.lower()
+
     data = {
         "include_guard": "CONVERSION_"
         + msg_type_name.split("/")[0].upper()
@@ -178,7 +186,7 @@ def get_message_structure(msg_type_name, output_file, header_file, source_file):
         "conversions": conversions,
         "ros2_header": msg_type_name.split("/")[0]
         + "/msg/"
-        + msg_type_name.split("/")[1].lower()
+        + ros2_message_header
         + ".hpp",
         "proto_header": msg_type_name.split("/")[0]
         + "__"

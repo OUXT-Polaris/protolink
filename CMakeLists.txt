@@ -29,6 +29,7 @@ if(BUILD_TESTING)
   include(cmake/add_protolink_message.cmake)
   add_protolink_message_from_ros_message("std_msgs" "String")
   add_protolink_message_from_ros_message("std_msgs" "Header")
+  add_protolink_message_from_ros_message("geometry_msgs" "PoseStamped")
 
   find_package(ament_cmake_gtest REQUIRED)
 
