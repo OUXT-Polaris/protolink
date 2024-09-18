@@ -130,7 +130,7 @@ def to_proto_message_definition(field_type, field_name, message_index):
         )
 
 
-def get_message_structure(msg_type_name, output_file, header_file):
+def get_message_structure(msg_type_name, output_file, header_file, source_file):
     env = Environment(
         loader=FileSystemLoader(searchpath=os.path.dirname(os.path.abspath(__file__)))
     )
@@ -217,20 +217,21 @@ def get_message_structure(msg_type_name, output_file, header_file):
 
     with open(header_file, "w") as f:
         f.write(template_header.render(data))
-    with open(os.path.splitext(os.path.basename(header_file))[0] + ".cpp", "w") as f:
+    with open(source_file, "w") as f:
         f.write(template_cpp.render(data))
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 4:
+    if len(sys.argv) != 5:
         print(
-            "Usage: python3 generate_proto.py <message_type> <proto file> <conversion header file>"
+            "Usage: python3 generate_proto.py <message_type> <proto file> <conversion header file> <conversion source file>"
         )
         print(
-            "Example: python3 generate_proto.py std_msgs/String std_msgs__String.proto conversion_std_msgs__String.hpp"
+            "Example: python3 generate_proto.py std_msgs/String std_msgs__String.proto conversion_std_msgs__String.hpp conversion_std_msgs__String.cpp"
         )
     else:
         msg_type_name = sys.argv[1]
         output_file = sys.argv[2]
         header_file = sys.argv[3]
-        get_message_structure(msg_type_name, output_file, header_file)
+        source_file = sys.argv[4]
+        get_message_structure(msg_type_name, output_file, header_file, source_file)
