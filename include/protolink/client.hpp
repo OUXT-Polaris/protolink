@@ -15,11 +15,13 @@
 #include <mqtt/async_client.h>
 
 #include <boost/asio.hpp>
+#include <thread>
 
 namespace protolink
 {
 class ClientBase
 {
+private:
   virtual void sendEncodedText(const std::string & encoded_text) = 0;
 };
 
@@ -56,11 +58,19 @@ public:
   explicit Client(
     const std::string & server_address, const std::string & client_id, const std::string & topic,
     const int qos = 1);
+  ~Client();
+
+  const std::string topic;
+  const int qos;
 
 private:
+  void sendEncodedText(const std::string & encoded_text) override;
+  void connect();
   mqtt::async_client client_impl_;
   mqtt::callback callback_;
   mqtt::token_ptr connect_token_;
+  std::thread connection_thread_;
+  bool connection_thread_running_;
 };
 }  // namespace mqtt_protocol
 }  // namespace protolink

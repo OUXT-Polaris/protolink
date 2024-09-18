@@ -23,3 +23,5 @@ int main(int argc, char ** argv)
 }
 
 TEST(UDP, construct) { protolink::udp_protocol::Client("127.0.0.1", 8000); }
+
+TEST(MQTT, connect) { protolink::mqtt_protocol::Client("127.0.0.1", "protolink", "hello"); }

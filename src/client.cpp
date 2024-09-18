@@ -36,7 +36,10 @@ namespace mqtt_protocol
 Client::Client(
   const std::string & server_address, const std::string & client_id, const std::string & topic,
   const int qos)
-: client_impl_(server_address, client_id, "/tmp/mqtt")
+: topic(topic),
+  qos(qos),
+  client_impl_(server_address, client_id, "/tmp/mqtt"),
+  connection_thread_running_(true)
 {
   client_impl_.set_callback(callback_);
   auto connect_options = mqtt::connect_options_builder()
@@ -44,6 +47,36 @@ Client::Client(
                            .will(mqtt::message(topic, LWT_PAYLOAD, strlen(LWT_PAYLOAD), qos, false))
                            .finalize();
   connect_token_ = client_impl_.connect(connect_options);
+  connection_thread_ = std::thread([this]() {
+    while (connection_thread_running_) {
+      connect();
+      std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
+  });
+}
+
+Client::~Client()
+{
+  connection_thread_running_ = false;
+  connection_thread_.join();
+}
+
+void Client::sendEncodedText(const std::string & encoded_text)
+{
+  if (client_impl_.is_connected()) {
+    client_impl_.publish(topic, encoded_text.c_str(), encoded_text.size(), qos, false);
+  }
+}
+
+void Client::connect()
+{
+  try {
+    if (!client_impl_.is_connected()) {
+      mqtt::token_ptr conntok = client_impl_.connect();
+      conntok->wait();
+    }
+  } catch (const mqtt::exception & /*exc*/) {
+  }
 }
 }  // namespace mqtt_protocol
 }  // namespace protolink
