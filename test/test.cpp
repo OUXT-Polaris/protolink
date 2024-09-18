@@ -25,13 +25,13 @@ int main(int argc, char ** argv)
 
 TEST(UDP, send_proto)
 {
-  auto client = protolink::udp_protocol::Client("127.0.0.1", 8000);
+  auto client = protolink::udp_protocol::Publisher("127.0.0.1", 8000);
   protolink__std_msgs__String::std_msgs__String string_msg;
   string_msg.set_data("Hello World");
   client.send(string_msg);
 }
 
-TEST(MQTT, connect) { protolink::mqtt_protocol::Client("127.0.0.1", "protolink", "hello"); }
+TEST(MQTT, connect) { protolink::mqtt_protocol::Publisher("127.0.0.1", "protolink", "hello"); }
 
 using AdaptedType =
   rclcpp::TypeAdapter<protolink__std_msgs__String::std_msgs__String, std_msgs::msg::String>;

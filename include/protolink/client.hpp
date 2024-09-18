@@ -22,10 +22,10 @@ namespace protolink
 {
 namespace udp_protocol
 {
-class Client
+class Publisher
 {
 public:
-  explicit Client(const std::string & ip_address, const uint16_t port);
+  explicit Publisher(const std::string & ip_address, const uint16_t port);
   const boost::asio::ip::udp::endpoint endpoint;
 
   template <typename Proto>
@@ -47,13 +47,13 @@ namespace mqtt_protocol
 {
 const char * LWT_PAYLOAD = "Last will and testament.";
 
-class Client
+class Publisher
 {
 public:
-  explicit Client(
+  explicit Publisher(
     const std::string & server_address, const std::string & client_id, const std::string & topic,
     const int qos = 1);
-  ~Client();
+  ~Publisher();
 
   const std::string topic;
   const int qos;

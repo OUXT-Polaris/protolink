@@ -18,14 +18,14 @@ namespace protolink
 {
 namespace udp_protocol
 {
-Client::Client(const std::string & ip_address, const uint16_t port)
+Publisher::Publisher(const std::string & ip_address, const uint16_t port)
 : endpoint(boost::asio::ip::udp::endpoint(
     boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string(ip_address), port))),
   sock_(io_service_, boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), port))
 {
 }
 
-void Client::sendEncodedText(const std::string & encoded_text)
+void Publisher::sendEncodedText(const std::string & encoded_text)
 {
   sock_.send_to(boost::asio::buffer(encoded_text), endpoint);
 }
@@ -33,7 +33,7 @@ void Client::sendEncodedText(const std::string & encoded_text)
 
 namespace mqtt_protocol
 {
-Client::Client(
+Publisher::Publisher(
   const std::string & server_address, const std::string & client_id, const std::string & topic,
   const int qos)
 : topic(topic),
@@ -55,20 +55,20 @@ Client::Client(
   });
 }
 
-Client::~Client()
+Publisher::~Publisher()
 {
   connection_thread_running_ = false;
   connection_thread_.join();
 }
 
-void Client::sendEncodedText(const std::string & encoded_text)
+void Publisher::sendEncodedText(const std::string & encoded_text)
 {
   if (client_impl_.is_connected()) {
     client_impl_.publish(topic, encoded_text.c_str(), encoded_text.size(), qos, false);
   }
 }
 
-void Client::connect()
+void Publisher::connect()
 {
   try {
     if (!client_impl_.is_connected()) {
