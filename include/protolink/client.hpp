@@ -12,13 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <mqtt/async_client.h>
+
 #include <boost/asio.hpp>
 
 namespace protolink
 {
-namespace udp
+class ClientBase
 {
-class Client
+  virtual void sendEncodedText(const std::string & encoded_text) = 0;
+};
+
+namespace udp_protocol
+{
+class Client : public ClientBase
 {
 public:
   explicit Client(const std::string & ip_address, const uint16_t port);
@@ -33,9 +40,27 @@ public:
   }
 
 private:
-  void sendEncodedText(const std::string & encoded_text);
+  void sendEncodedText(const std::string & encoded_text) override;
   boost::asio::io_service io_service_;
   boost::asio::ip::udp::socket sock_;
 };
-}  // namespace udp
+}  // namespace udp_protocol
+
+namespace mqtt_protocol
+{
+const char * LWT_PAYLOAD = "Last will and testament.";
+
+class Client : public ClientBase
+{
+public:
+  explicit Client(
+    const std::string & server_address, const std::string & client_id, const std::string & topic,
+    const int qos = 1);
+
+private:
+  mqtt::async_client client_impl_;
+  mqtt::callback callback_;
+  mqtt::token_ptr connect_token_;
+};
+}  // namespace mqtt_protocol
 }  // namespace protolink

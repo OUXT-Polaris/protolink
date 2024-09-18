@@ -7,11 +7,14 @@ endif()
 
 # find dependencies
 find_package(ament_cmake_auto REQUIRED)
+find_package(PahoMqttCpp REQUIRED)
+include(FindProtobuf REQUIRED)
 ament_auto_find_build_dependencies()
 
 ament_auto_add_library(protolink SHARED
   src/client.cpp
 )
+target_link_libraries(protolink )
 
 install(
   DIRECTORY cmake
@@ -25,6 +28,11 @@ if(BUILD_TESTING)
 
   include(cmake/add_protolink_message.cmake)
   add_protolink_message_from_ros_message("std_msgs" "String")
+
+  find_package(ament_cmake_gtest REQUIRED)
+
+  ament_add_gtest(unittest test/test.cpp)
+  target_link_libraries(unittest protolink ${PROTOBUF_LIBRARY} PahoMqttCpp::paho-mqttpp3)
 endif()
 
 ament_auto_package(CONFIG_EXTRAS "${PROJECT_NAME}_ament_cmake-extras.cmake")

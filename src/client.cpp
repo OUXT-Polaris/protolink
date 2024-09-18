@@ -16,7 +16,7 @@
 
 namespace protolink
 {
-namespace udp
+namespace udp_protocol
 {
 Client::Client(const std::string & ip_address, const uint16_t port)
 : endpoint(boost::asio::ip::udp::endpoint(
@@ -29,5 +29,21 @@ void Client::sendEncodedText(const std::string & encoded_text)
 {
   sock_.send_to(boost::asio::buffer(encoded_text), endpoint);
 }
-}  // namespace udp
+}  // namespace udp_protocol
+
+namespace mqtt_protocol
+{
+Client::Client(
+  const std::string & server_address, const std::string & client_id, const std::string & topic,
+  const int qos)
+: client_impl_(server_address, client_id, "/tmp/mqtt")
+{
+  client_impl_.set_callback(callback_);
+  auto connect_options = mqtt::connect_options_builder()
+                           .clean_session()
+                           .will(mqtt::message(topic, LWT_PAYLOAD, strlen(LWT_PAYLOAD), qos, false))
+                           .finalize();
+  connect_token_ = client_impl_.connect(connect_options);
+}
+}  // namespace mqtt_protocol
 }  // namespace protolink
