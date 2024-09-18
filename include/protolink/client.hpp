@@ -19,15 +19,9 @@
 
 namespace protolink
 {
-class ClientBase
-{
-private:
-  virtual void sendEncodedText(const std::string & encoded_text) = 0;
-};
-
 namespace udp_protocol
 {
-class Client : public ClientBase
+class Client
 {
 public:
   explicit Client(const std::string & ip_address, const uint16_t port);
@@ -42,7 +36,7 @@ public:
   }
 
 private:
-  void sendEncodedText(const std::string & encoded_text) override;
+  void sendEncodedText(const std::string & encoded_text);
   boost::asio::io_service io_service_;
   boost::asio::ip::udp::socket sock_;
 };
@@ -52,7 +46,7 @@ namespace mqtt_protocol
 {
 const char * LWT_PAYLOAD = "Last will and testament.";
 
-class Client : public ClientBase
+class Client
 {
 public:
   explicit Client(
@@ -64,7 +58,7 @@ public:
   const int qos;
 
 private:
-  void sendEncodedText(const std::string & encoded_text) override;
+  void sendEncodedText(const std::string & encoded_text);
   void connect();
   mqtt::async_client client_impl_;
   mqtt::callback callback_;
