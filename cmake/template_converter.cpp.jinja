@@ -1,0 +1,13 @@
+#include <{{ conversion_header }}>
+
+{% for conversion in conversions %}
+{{ conversion.ros2 }} convert(const {{ conversion.proto }} & message)
+{
+    {{ conversion.ros2 }} ros2_message;
+    {% for member in members %}
+    ros2_message.{{member}} = message.{{member}}();
+    {% endfor %}
+    return ros2_message;
+}
+{% endfor %}
+

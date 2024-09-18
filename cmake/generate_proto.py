@@ -66,6 +66,26 @@ def append_members_for_template(field_type, field_name, members):
         return members
 
 
+def append_conversions_for_template(field_type, field_name, conversions):
+    if "/" in field_type:
+        conversions.append(
+            {
+                "proto": "protolink__"
+                + field_type.split("/")[0]
+                + "__"
+                + field_type.split("/")[1]
+                + "::"
+                + field_type.split("/")[0]
+                + "__"
+                + field_type.split("/")[1],
+                "ros2": field_type.split("/")[0] + "::msg::" + field_type.split("/")[1],
+            }
+        )
+        return conversions
+    else:
+        return conversions
+
+
 def to_proto_message_definition(field_type, field_name, message_index):
     if "/" in field_type:
         fields = get_message_fields(field_type)
@@ -114,7 +134,8 @@ def get_message_structure(msg_type_name, output_file, header_file):
     env = Environment(
         loader=FileSystemLoader(searchpath=os.path.dirname(os.path.abspath(__file__)))
     )
-    template = env.get_template("template_converter.hpp.jinja")
+    template_header = env.get_template("template_converter.hpp.jinja")
+    template_cpp = env.get_template("template_converter.cpp.jinja")
     conversions = [
         {
             "proto": "protolink__"
@@ -145,6 +166,7 @@ def get_message_structure(msg_type_name, output_file, header_file):
         + "__"
         + msg_type_name.split("/")[1]
         + ".pb.h",
+        "conversion_header": header_file,
     }
 
     members = {}
@@ -177,6 +199,9 @@ def get_message_structure(msg_type_name, output_file, header_file):
     for field_name, field_type in fields.items():
         print(f"  - {field_name}: {field_type} -> {to_proto_type(field_type)}")
         members = append_members_for_template(field_type, field_name, members)
+        conversions = append_conversions_for_template(
+            field_type, field_name, conversions
+        )
         proto_string = proto_string + to_proto_message_definition(
             field_type, field_name, message_index
         )
@@ -191,7 +216,9 @@ def get_message_structure(msg_type_name, output_file, header_file):
     data["members"] = members
 
     with open(header_file, "w") as f:
-        f.write(template.render(data))
+        f.write(template_header.render(data))
+    with open(os.path.splitext(os.path.basename(header_file))[0] + ".cpp", "w") as f:
+        f.write(template_cpp.render(data))
 
 
 if __name__ == "__main__":
