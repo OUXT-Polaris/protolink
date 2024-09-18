@@ -58,6 +58,14 @@ def to_proto_type(ros2_message_field_type):
     raise Exception("Unspoorted built-in type.")
 
 
+def append_members_for_template(field_type, field_name, members):
+    if "/" in field_type:
+        return members
+    else:
+        members[field_name] = field_type
+        return members
+
+
 def to_proto_message_definition(field_type, field_name, message_index):
     if "/" in field_type:
         fields = get_message_fields(field_type)
@@ -107,23 +115,28 @@ def get_message_structure(msg_type_name, output_file, header_file):
         loader=FileSystemLoader(searchpath=os.path.dirname(os.path.abspath(__file__)))
     )
     template = env.get_template("template_converter.hpp.jinja")
+    conversions = [
+        {
+            "proto": "protolink__"
+            + msg_type_name.split("/")[0]
+            + "__"
+            + msg_type_name.split("/")[1]
+            + "::"
+            + msg_type_name.split("/")[0]
+            + "__"
+            + msg_type_name.split("/")[1],
+            "ros2": msg_type_name.split("/")[0]
+            + "::msg::"
+            + msg_type_name.split("/")[1],
+        }
+    ]
     data = {
         "include_guard": "CONVERSION_"
         + msg_type_name.split("/")[0].upper()
         + "__"
         + msg_type_name.split("/")[1].upper()
         + "_HPP",
-        "ros2_message": msg_type_name.split("/")[0]
-        + "::msg::"
-        + msg_type_name.split("/")[1],
-        "proto_message": "protolink__"
-        + msg_type_name.split("/")[0]
-        + "__"
-        + msg_type_name.split("/")[1]
-        + "::"
-        + msg_type_name.split("/")[0]
-        + "__"
-        + msg_type_name.split("/")[1],
+        "conversions": conversions,
         "ros2_header": msg_type_name.split("/")[0]
         + "/msg/"
         + msg_type_name.split("/")[1].lower()
@@ -133,6 +146,8 @@ def get_message_structure(msg_type_name, output_file, header_file):
         + msg_type_name.split("/")[1]
         + ".pb.h",
     }
+
+    members = {}
 
     fields = get_message_fields(msg_type_name)
 
@@ -161,6 +176,7 @@ def get_message_structure(msg_type_name, output_file, header_file):
 
     for field_name, field_type in fields.items():
         print(f"  - {field_name}: {field_type} -> {to_proto_type(field_type)}")
+        members = append_members_for_template(field_type, field_name, members)
         proto_string = proto_string + to_proto_message_definition(
             field_type, field_name, message_index
         )
@@ -171,6 +187,8 @@ def get_message_structure(msg_type_name, output_file, header_file):
     print(proto_string)
     with open(output_file, mode="w") as f:
         f.write(proto_string)
+
+    data["members"] = members
 
     with open(header_file, "w") as f:
         f.write(template.render(data))

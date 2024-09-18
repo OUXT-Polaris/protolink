@@ -4,8 +4,15 @@
 #include <{{ ros2_header }}>
 #include <{{ proto_header }}>
 
-{{ ros2_message }} convert(const {{ proto_message }} & message)
+{% for conversion in conversions %}
+{{ conversion.ros2 }} convert(const {{ conversion.proto }} & message)
 {
+    {{ conversion.ros2 }} ros2_message;
+    {% for member in members %}
+    ros2_message.{{member}} = message.{{member}}();
+    {% endfor %}
+    return ros2_message;
 }
+{% endfor %}
 
 #endif // {{ include_guard }}
