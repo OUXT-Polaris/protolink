@@ -15,10 +15,15 @@
 #include <mqtt/async_client.h>
 
 #include <boost/asio.hpp>
+#include <rclcpp/rclcpp.hpp>
 #include <thread>
 
 namespace protolink
 {
+template <typename MessageType>
+using is_ros2_message =
+  typename std::enable_if_t<rosidl_generator_traits::is_message<MessageType>::value, int>;
+
 namespace udp_protocol
 {
 class Client

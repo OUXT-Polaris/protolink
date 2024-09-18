@@ -13,8 +13,10 @@
 // limitations under the License.
 
 #include <gtest/gtest.h>
+#include <std_msgs__String.pb.h>
 
 #include <protolink/client.hpp>
+#include <std_msgs/msg/string.hpp>
 
 int main(int argc, char ** argv)
 {
@@ -22,6 +24,12 @@ int main(int argc, char ** argv)
   return RUN_ALL_TESTS();
 }
 
-TEST(UDP, construct) { protolink::udp_protocol::Client("127.0.0.1", 8000); }
+TEST(UDP, send_proto)
+{
+  auto client = protolink::udp_protocol::Client("127.0.0.1", 8000);
+  protolink__std_msgs__String::std_msgs__String string_msg;
+  string_msg.set_data("Hello World");
+  client.send(string_msg);
+}
 
 TEST(MQTT, connect) { protolink::mqtt_protocol::Client("127.0.0.1", "protolink", "hello"); }

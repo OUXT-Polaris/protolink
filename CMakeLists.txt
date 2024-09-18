@@ -32,7 +32,10 @@ if(BUILD_TESTING)
   find_package(ament_cmake_gtest REQUIRED)
 
   ament_add_gtest(unittest test/test.cpp)
-  target_link_libraries(unittest protolink ${PROTOBUF_LIBRARY} PahoMqttCpp::paho-mqttpp3)
+  target_link_libraries(unittest protolink 
+    ${PROTOBUF_LIBRARY}
+    PahoMqttCpp::paho-mqttpp3
+    std_msgs__String_proto)
 endif()
 
 ament_auto_package(CONFIG_EXTRAS "${PROJECT_NAME}_ament_cmake-extras.cmake")
