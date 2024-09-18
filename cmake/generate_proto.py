@@ -62,8 +62,13 @@ def append_conversions_for_template(namespace, field_type, conversions):
     if "/" in field_type:
         if namespace != "":
             builtin_types = []
-            for field in get_message_fields(field_type):
-                builtin_types.append(field)
+            user_types = []
+            fields = get_message_fields(field_type)
+            for field_name_in_child, field_type_in_child in fields.items():
+                if "/" in field_type_in_child:
+                    pass
+                else:
+                    builtin_types.append(field_name_in_child)
             conversions.append(
                 {
                     "proto": namespace
@@ -74,20 +79,38 @@ def append_conversions_for_template(namespace, field_type, conversions):
                     "ros2": field_type.split("/")[0]
                     + "::msg::"
                     + field_type.split("/")[1],
-                    "members": {"builtin_types": builtin_types},
+                    "members": {
+                        "builtin_types": builtin_types,
+                        "user_types": user_types,
+                    },
                 }
             )
         else:
             builtin_types = []
-            for field in get_message_fields(field_type):
-                builtin_types.append(field)
+            user_types = []
+            fields = get_message_fields(field_type)
+            for field_name_in_child, field_type_in_child in fields.items():
+                if "/" in field_type_in_child:
+                    pass
+                else:
+                    builtin_types.append(field_name_in_child)
             conversions.append(
                 {
-                    "proto": field_type.split("/")[0] + "__" + field_type.split("/")[1],
+                    "proto": "protolink__"
+                    + field_type.split("/")[0]
+                    + "__"
+                    + field_type.split("/")[1]
+                    + "::"
+                    + field_type.split("/")[0]
+                    + "__"
+                    + field_type.split("/")[1],
                     "ros2": field_type.split("/")[0]
                     + "::msg::"
                     + field_type.split("/")[1],
-                    "members": {"builtin_types": builtin_types},
+                    "members": {
+                        "builtin_types": builtin_types,
+                        "user_types": user_types,
+                    },
                 }
             )
         return conversions
@@ -146,23 +169,6 @@ def get_message_structure(msg_type_name, output_file, header_file, source_file):
     template_header = env.get_template("template_converter.hpp.jinja")
     template_cpp = env.get_template("template_converter.cpp.jinja")
     conversions = append_conversions_for_template("", msg_type_name, [])
-
-    conversions = [
-        {
-            "proto": "protolink__"
-            + msg_type_name.split("/")[0]
-            + "__"
-            + msg_type_name.split("/")[1]
-            + "::"
-            + msg_type_name.split("/")[0]
-            + "__"
-            + msg_type_name.split("/")[1],
-            "ros2": msg_type_name.split("/")[0]
-            + "::msg::"
-            + msg_type_name.split("/")[1],
-            "members": [],
-        }
-    ]
     data = {
         "include_guard": "CONVERSION_"
         + msg_type_name.split("/")[0].upper()

@@ -7,6 +7,10 @@
     {% for builtin_type in conversion.members.builtin_types %}
     ros2_message.{{builtin_type}} = message.{{builtin_type}}();
     {% endfor %}
+
+    {% for user_type in conversion.members.user_types %}
+    {% endfor %}
+
     return ros2_message;
 }
 {% endfor %}
