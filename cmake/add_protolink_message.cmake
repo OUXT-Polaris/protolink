@@ -114,18 +114,20 @@ function(add_protolink_message_from_ros_message MESSAGE_PACKAGE MESSAGE_TYPE)
 
   if(${PROJECT_NAME} STREQUAL "protolink")
     set(GENERATE_PROTO_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/cmake/generate_proto.py)
-    set(JINJA_TEMPLATE ${CMAKE_CURRENT_SOURCE_DIR}/cmake/template_converter.hpp.jinja)
+    set(JINJA_TEMPLATE_HPP ${CMAKE_CURRENT_SOURCE_DIR}/cmake/template_converter.hpp.jinja)
+    set(JINJA_TEMPLATE_CPP ${CMAKE_CURRENT_SOURCE_DIR}/cmake/template_converter.cpp.jinja)
   else()
     find_package(protolink REQUIRED)
     set(GENERATE_PROTO_SCRIPT ${protolink_DIR}/generate_proto.py)
-    set(JINJA_TEMPLATE ${protolink_DIR}/template_converter.hpp.jinja)
+    set(JINJA_TEMPLATE_HPP ${protolink_DIR}/template_converter.hpp.jinja)
+    set(JINJA_TEMPLATE_CPP ${protolink_DIR}/template_converter.cpp.jinja)
   endif()
 
   add_custom_command(
     OUTPUT ${PROTO_FILE} ${CONVERSION_HEADER_FILE} ${CONVERSION_SOURCE_FILE} ${CONVERSION_SOURCE_FILE}
     COMMAND python3 ${GENERATE_PROTO_SCRIPT} ${MESSAGE_PACKAGE}/${MESSAGE_TYPE} ${PROTO_FILE} ${CONVERSION_HEADER_FILE} ${CONVERSION_SOURCE_FILE}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    DEPENDS ${GENERATE_PROTO_SCRIPT} ${JINJA_TEMPLATE}
+    DEPENDS ${GENERATE_PROTO_SCRIPT} ${JINJA_TEMPLATE_HPP} ${JINJA_TEMPLATE_CPP}
   )
 
   add_custom_target(${MESSAGE_PACKAGE}__${MESSAGE_TYPE}_from_ros ALL DEPENDS ${PROTO_FILE} ${CONVERSION_HEADER_FILE} ${CONVERSION_SOURCE_FILE})

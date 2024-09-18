@@ -8,6 +8,7 @@
 
 {% for conversion in conversions %}
 {{ conversion.ros2 }} convert(const {{ conversion.proto }} & message);
+{{ conversion.proto }} convert(const {{ conversion.ros2 }} & message);
 
 template <>
 struct rclcpp::TypeAdapter<{{ conversion.proto }}, {{ conversion.ros2 }}>
@@ -21,7 +22,10 @@ struct rclcpp::TypeAdapter<{{ conversion.proto }}, {{ conversion.ros2 }}>
     destination = convert(source);
   }
 
-  static void convert_to_custom(const ros_message_type & /*source*/, custom_type & /*destination*/) {}
+  static void convert_to_custom(const ros_message_type & source, custom_type & destination)
+  {
+    destination = convert(source);
+  }
 };
 
 {% endfor %}

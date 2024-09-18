@@ -14,4 +14,17 @@
 
     return ros2_message;
 }
+
+{{ conversion.proto }} convert(const {{ conversion.ros2 }} & message)
+{
+    {{ conversion.proto }} proto_message;
+    {% for builtin_type in conversion.members.builtin_types %}
+    proto_message.set_{{builtin_type}}(message.{{builtin_type}});
+    {% endfor %}
+
+    {% for user_type in conversion.members.user_types %}
+    *proto_message.mutable_{{user_type}}() = convert(message.{{user_type}});
+    {% endfor %}
+    return proto_message;
+}
 {% endfor %}

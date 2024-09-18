@@ -74,8 +74,9 @@ TEST(TypeAdapter, pub_sub)
   options.use_intra_process_comms(true);
   bool proto_recieved = false;
   auto sub_node = std::make_shared<SubNode>(
-    options,
-    [&](const protolink__std_msgs__String::std_msgs__String & proto) { proto_recieved = true; });
+    options, [&](const protolink__std_msgs__String::std_msgs__String & /*proto*/) {
+      proto_recieved = true;
+    });
   auto pub_node = std::make_shared<PubNode>(options);
   // pub_node->publish();
   rclcpp::executors::SingleThreadedExecutor exec;
