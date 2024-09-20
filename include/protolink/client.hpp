@@ -73,8 +73,42 @@ private:
 
 class Subscriber
 {
+  class action_listener : public virtual mqtt::iaction_listener
+  {
+    std::string name_;
+
+    void on_failure(const mqtt::token& tok) override {
+      std::cout << name_ << " failure";
+      if (tok.get_message_id() != 0)
+        std::cout << " for token: [" << tok.get_message_id() << "]" << std::endl;
+      std::cout << std::endl;
+    }
+
+    void on_success(const mqtt::token& tok) override {
+      std::cout << name_ << " success";
+      if (tok.get_message_id() != 0)
+        std::cout << " for token: [" << tok.get_message_id() << "]" << std::endl;
+      auto top = tok.get_topics();
+      if (top && !top->empty())
+        std::cout << "\ttoken topic: '" << (*top)[0] << "', ..." << std::endl;
+      std::cout << std::endl;
+    }
+
+  public:
+    action_listener(const std::string& name) : name_(name) {}
+  };
+
   class callback : public virtual mqtt::callback, public virtual mqtt::iaction_listener
   {
+    // @todo update values
+    const std::string SERVER_ADDRESS = "mqtt://localhost:1883";
+    const std::string CLIENT_ID = "paho_cpp_async_subscribe";
+    const std::string TOPIC = "hello";
+
+    const int	QOS = 1;
+    const int	N_RETRY_ATTEMPTS = 5;
+
+
     // Counter for the number of connection retries
     int nretry_;
     // The MQTT client
