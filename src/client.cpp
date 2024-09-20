@@ -18,9 +18,11 @@ namespace protolink
 {
 namespace udp_protocol
 {
-Publisher::Publisher(const std::string & ip_address, const uint16_t port)
+Publisher::Publisher(
+  const std::string & ip_address, const uint16_t port, const rclcpp::Logger & logger)
 : endpoint(boost::asio::ip::udp::endpoint(
     boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string(ip_address), port))),
+  logger(logger),
   sock_(io_service_, boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), port))
 {
 }
@@ -35,9 +37,10 @@ namespace mqtt_protocol
 {
 Publisher::Publisher(
   const std::string & server_address, const std::string & client_id, const std::string & topic,
-  const int qos)
+  const int qos, const rclcpp::Logger & logger)
 : topic(topic),
   qos(qos),
+  logger(logger),
   client_impl_(server_address, client_id, "/tmp/mqtt"),
   connection_thread_running_(true)
 {
@@ -48,6 +51,16 @@ Publisher::Publisher(
                            .finalize();
   connect_token_ = client_impl_.connect(connect_options);
   connection_thread_ = std::thread([this]() {
+    const auto connect = [this]() {
+      try {
+        if (!client_impl_.is_connected()) {
+          mqtt::token_ptr conntok = client_impl_.connect();
+          conntok->wait();
+        }
+      } catch (const mqtt::exception & exc) {
+        RCLCPP_ERROR_STREAM(this->logger, exc.what());
+      }
+    };
     while (connection_thread_running_) {
       connect();
       std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -68,15 +81,11 @@ void Publisher::sendEncodedText(const std::string & encoded_text)
   }
 }
 
-void Publisher::connect()
+Subscriber::Subscriber(
+  const std::string & server_address, const std::string & client_id, const std::string & topic,
+  const int qos, const rclcpp::Logger & logger)
+: topic(topic), qos(qos), logger(logger), client_impl_(server_address, client_id)
 {
-  try {
-    if (!client_impl_.is_connected()) {
-      mqtt::token_ptr conntok = client_impl_.connect();
-      conntok->wait();
-    }
-  } catch (const mqtt::exception & /*exc*/) {
-  }
 }
 }  // namespace mqtt_protocol
 }  // namespace protolink

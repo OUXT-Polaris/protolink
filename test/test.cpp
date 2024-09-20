@@ -31,7 +31,7 @@ TEST(UDP, send_proto)
   client.send(string_msg);
 }
 
-TEST(MQTT, connect) { protolink::mqtt_protocol::Publisher("127.0.0.1", "protolink", "hello"); }
+TEST(MQTT, connect) { protolink::mqtt_protocol::Publisher("127.0.0.1", "protolink", "hello", 1); }
 
 using AdaptedType =
   rclcpp::TypeAdapter<protolink__std_msgs__String::std_msgs__String, std_msgs::msg::String>;
