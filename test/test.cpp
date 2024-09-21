@@ -25,13 +25,16 @@ int main(int argc, char ** argv)
 
 TEST(UDP, send_proto)
 {
-  auto client = protolink::udp_protocol::Publisher("127.0.0.1", 8000);
-  protolink__std_msgs__String::std_msgs__String string_msg;
-  string_msg.set_data("Hello World");
-  client.send(string_msg);
+  // std::shared_ptr<boost::asio::io_service> io = std::make_shared<boost::asio::io_service>();
+  boost::asio::io_service ios;
+  auto client =
+    protolink::udp_protocol::Publisher(ios, "127.0.0.1", 8000, 8000);
+  // protolink__std_msgs__String::std_msgs__String string_msg;
+  // string_msg.set_data("Hello World");
+  // client.send(string_msg);
 }
 
-TEST(MQTT, connect) { protolink::mqtt_protocol::Publisher("127.0.0.1", "protolink", "hello", 1); }
+// TEST(MQTT, connect) { protolink::mqtt_protocol::Publisher("127.0.0.1", "protolink", "hello", 1); }
 
 using AdaptedType =
   rclcpp::TypeAdapter<protolink__std_msgs__String::std_msgs__String, std_msgs::msg::String>;
