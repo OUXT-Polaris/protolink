@@ -12,6 +12,7 @@
   <depend>ament_cmake_auto</depend>
   <depend>boost</depend>
   <depend>libnanopb-dev</depend>
+  <depend>libpaho-mqtt-dev</depend>
   <depend>libpaho-mqttpp-dev</depend>
   <depend>protobuf-dev</depend>
   <depend>protobuf</depend>
