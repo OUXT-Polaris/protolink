@@ -6,10 +6,40 @@
 #include <{{ ros2_header }}>
 #include "{{ proto_header }}"
 
-{% for conversion in conversions %}
-{{ conversion.ros2 }} convert(const {{ conversion.proto }} & message);
-{{ conversion.proto }} convert(const {{ conversion.ros2 }} & message);
+namespace {{ conversion_namespace }} {
 
+// Allowing overloads by accepting the destination as an argument.
+{% for conversion in conversions %}
+void convert_impl(const {{ conversion.ros2 }} & source, {{ conversion.proto }} & destination);
+{{ conversion.ros2 }} convert(const {{ conversion.proto }} & message);
+{% endfor %}
+
+// Define Proxy Object
+template <typename RosMessageType>
+struct ConversionProxy
+{
+  const RosMessageType & source_;
+
+  // An operator that is automatically cast according to the type of the assignment destination (ProtoMessageType).
+  template <typename ProtoMessageType>
+  operator ProtoMessageType() const
+  {
+    ProtoMessageType destination;
+    convert_impl(source_, destination);
+    return destination;
+  }
+};
+
+template <typename RosMessageType>
+ConversionProxy<RosMessageType> convert(const RosMessageType & source)
+{
+  return ConversionProxy<RosMessageType>{source};
+}
+
+} // namespace {{ conversion_namespace }}
+
+
+{% for conversion in conversions %}
 template <>
 struct rclcpp::TypeAdapter<{{ conversion.proto }}, {{ conversion.ros2 }}>
 {
@@ -19,15 +49,16 @@ struct rclcpp::TypeAdapter<{{ conversion.proto }}, {{ conversion.ros2 }}>
 
   static void convert_to_ros_message(const custom_type & source, ros_message_type & destination)
   {
-    destination = convert(source);
+    destination = {{ conversion_namespace }}::convert(source);
   }
 
   static void convert_to_custom(const ros_message_type & source, custom_type & destination)
   {
-    destination = convert(source);
+    destination = {{ conversion_namespace }}::convert(source);
   }
 };
 
 {% endfor %}
 
 #endif // {{ include_guard }}
+

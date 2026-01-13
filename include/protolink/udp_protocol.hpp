@@ -1,4 +1,4 @@
-// Copyright 2024 OUXT Polaris.
+// Copyright 2025 OUXT Polaris.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,17 +19,29 @@
 #include <boost/thread.hpp>
 #include <rclcpp/rclcpp.hpp>
 
+#include "utils.hpp"
+
 namespace protolink
 {
 namespace udp_protocol
 {
+
+using soket = boost::asio::ip::udp::socket;
+
+inline std::shared_ptr<boost::asio::ip::udp::socket> create_socket(
+  protolink::IoContext & io_context, const uint16_t port)
+{
+  return std::make_shared<boost::asio::ip::udp::socket>(
+    io_context.get(), boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), port));
+}
+
 template <typename Proto>
 class Publisher
 {
 public:
   explicit Publisher(
-    boost::asio::io_context & io_context, const std::string & ip_address, const uint16_t port,
-    const uint16_t from_port, const rclcpp::Logger & logger = rclcpp::get_logger("protolink_udp"))
+    std::shared_ptr<boost::asio::ip::udp::socket> sock, const std::string & ip_address,
+    const uint16_t port, const rclcpp::Logger & logger = rclcpp::get_logger("protolink_udp"))
   : endpoint([ip_address, port]() {
       if (ip_address == "255.255.255.255") {
         return boost::asio::ip::udp::endpoint(boost::asio::ip::address_v4::broadcast(), port);
@@ -38,11 +50,11 @@ public:
         boost::asio::ip::address::from_string(ip_address), port);
     }()),
     logger(logger),
-    sock_(io_context, boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), from_port))
+    sock_(sock)
   {
     if (ip_address == "255.255.255.255" || ip_address.substr(ip_address.length() - 3, 3) == "255") {
-      sock_.set_option(boost::asio::ip::udp::socket::reuse_address(true));
-      sock_.set_option(boost::asio::socket_base::broadcast(true));
+      sock_->set_option(boost::asio::ip::udp::socket::reuse_address(true));
+      sock_->set_option(boost::asio::socket_base::broadcast(true));
     }
   }
   const boost::asio::ip::udp::endpoint endpoint;
@@ -58,9 +70,9 @@ public:
 private:
   void sendEncodedText(const std::string & encoded_text)
   {
-    sock_.send_to(boost::asio::buffer(encoded_text), endpoint);
+    sock_->send_to(boost::asio::buffer(encoded_text), endpoint);
   }
-  boost::asio::ip::udp::socket sock_;
+  std::shared_ptr<boost::asio::ip::udp::socket> sock_;
 };
 
 template <typename Proto, int ReceiveBufferSize = 128>
@@ -68,20 +80,16 @@ class Subscriber
 {
 public:
   explicit Subscriber(
-    boost::asio::io_context & io_context, const uint16_t port,
-    std::function<void(const Proto &)> callback,
+    std::shared_ptr<boost::asio::ip::udp::socket> sock, std::function<void(const Proto &)> callback,
     const rclcpp::Logger & logger = rclcpp::get_logger("protolink_serial"))
-  : logger(logger),
-    sock_(io_context, boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), port)),
-    callback_(callback)
+  : logger(logger), sock_(sock), callback_(callback)
   {
     start_receive();
-    io_thread_ = std::thread(boost::bind(&boost::asio::io_context::run, &io_context));
   }
 
   void start_receive()
   {
-    sock_.async_receive(
+    sock_->async_receive(
       boost::asio::buffer(receive_data_),
       boost::bind(
         &Subscriber::handler, this, boost::asio::placeholders::error,
@@ -90,7 +98,7 @@ public:
   const rclcpp::Logger logger;
 
 private:
-  boost::asio::ip::udp::socket sock_;
+  std::shared_ptr<boost::asio::ip::udp::socket> sock_;
   std::function<void(Proto)> callback_;
   std::thread io_thread_;
   boost::array<char, ReceiveBufferSize> receive_data_;

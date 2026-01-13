@@ -73,13 +73,39 @@ def to_proto_type(ros2_message_field_type: str) -> str | None:
 
 
 def append_conversions_for_template(
-    namespace: str, field_type: str, conversions: list[dict]
+    namespace: str, field_type: str, conversions: list[dict], processed_types: set[str]
 ) -> list[dict]:
     if is_sequence_type(field_type):
         return append_conversions_for_template(
-            namespace, is_sequence_type(field_type), conversions
+            namespace, is_sequence_type(field_type), conversions, processed_types
         )
     elif "/" in field_type:
+        if namespace != "":
+            current_proto_full_name = (
+                namespace
+                + "::"
+                + field_type.split("/")[0]
+                + "__"
+                + field_type.split("/")[1]
+            )
+        else:
+            current_proto_full_name = (
+                "protolink__"
+                + field_type.split("/")[0]
+                + "__"
+                + field_type.split("/")[1]
+                + "::"
+                + field_type.split("/")[0]
+                + "__"
+                + field_type.split("/")[1]
+            )
+
+        # Check for duplicates in Protobuf type names
+        if current_proto_full_name in processed_types:
+            return conversions
+
+        processed_types.add(current_proto_full_name)
+
         if namespace != "":
             builtin_types = []
             user_types = []
@@ -96,16 +122,13 @@ def append_conversions_for_template(
                         + field_type.split("/")[1],
                         field_type_in_child,
                         conversions,
+                        processed_types,
                     )
                 else:
                     builtin_types.append(field_name_in_child)
             conversions.append(
                 {
-                    "proto": namespace
-                    + "::"
-                    + field_type.split("/")[0]
-                    + "__"
-                    + field_type.split("/")[1],
+                    "proto": current_proto_full_name,
                     "ros2": field_type.split("/")[0]
                     + "::msg::"
                     + field_type.split("/")[1],
@@ -130,14 +153,7 @@ def append_conversions_for_template(
                     builtin_types.append(field_name_in_child)
             conversions.append(
                 {
-                    "proto": "protolink__"
-                    + field_type.split("/")[0]
-                    + "__"
-                    + field_type.split("/")[1]
-                    + "::"
-                    + field_type.split("/")[0]
-                    + "__"
-                    + field_type.split("/")[1],
+                    "proto": current_proto_full_name,
                     "ros2": field_type.split("/")[0]
                     + "::msg::"
                     + field_type.split("/")[1],
@@ -226,14 +242,22 @@ def get_message_structure(
     )
     template_header = env.get_template("template_converter.hpp.jinja")
     template_cpp = env.get_template("template_converter.cpp.jinja")
-    conversions = append_conversions_for_template("", msg_type_name, [])
 
+    processed_types = set()
+    conversions = append_conversions_for_template(
+        "", msg_type_name, [], processed_types
+    )
+
+    name = msg_type_name.split("/")[1]
     ros2_message_header = ""
-    for splited in re.split(r"(?=[A-Z])", msg_type_name.split("/")[1]):
-        if ros2_message_header == "":
-            ros2_message_header = splited.lower()
-        else:
-            ros2_message_header = ros2_message_header + "_" + splited.lower()
+    if name.isupper():
+        ros2_message_header = name.lower()
+    else:
+        for splited in re.split(r"(?=[A-Z])", name):
+            if ros2_message_header == "":
+                ros2_message_header = splited.lower()
+            else:
+                ros2_message_header = ros2_message_header + "_" + splited.lower()
 
     data = {
         "include_guard": "CONVERSION_"
@@ -250,6 +274,7 @@ def get_message_structure(
         + "__"
         + msg_type_name.split("/")[1]
         + ".pb.h",
+        "conversion_namespace": "protolink__" + msg_type_name.replace("/", "__"),
         "conversion_header": header_file,
     }
 
@@ -290,6 +315,7 @@ def get_message_structure(
             + msg_type_name.split("/")[1],
             field_type,
             conversions,
+            processed_types,
         )
         proto_string = proto_string + to_proto_message_definition(
             field_type, field_name, message_index, False

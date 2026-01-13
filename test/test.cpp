@@ -1,4 +1,4 @@
-// Copyright 2024 OUXT Polaris.
+// Copyright 2025 OUXT Polaris.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 #include <proto_files/conversion_std_msgs__String.hpp>
 #include <protolink/client.hpp>
+#include <protolink/serial_protocol.hpp>
 
 int main(int argc, char ** argv)
 {
@@ -27,9 +28,11 @@ TEST(UDP, send_proto)
 {
   // std::shared_ptr<boost::asio::io_context> io =
   // std::make_shared<boost::asio::io_context>();
-  boost::asio::io_context ioc;
+  protolink::IoContext ioc;
+  std::shared_ptr<protolink::udp_protocol::soket> sock =
+    protolink::udp_protocol::create_socket(ioc, 8000);
   auto client = protolink::udp_protocol::Publisher<protolink__std_msgs__String::std_msgs__String>(
-    ioc, "127.0.0.1", 8000, 8000);
+    sock, "127.0.0.1", 8000);
   // protolink__std_msgs__String::std_msgs__String string_msg;
   // string_msg.set_data("Hello World");
   // client.send(string_msg);
@@ -37,10 +40,10 @@ TEST(UDP, send_proto)
 
 // TEST(UDP, recieve_proto)
 // {
-//   boost::asio::io_context ioc;
+//   protolink::IoContext ioc;
 //   auto client =
 //   protolink::udp_protocol::Subscriber<protolink__std_msgs__String::std_msgs__String>(
-//     ioc, 8000, [](const auto &) {});
+//     ioc.get(), 8000, [](const auto &) {});
 // }
 
 // TEST(MQTT, connect) { protolink::mqtt_protocol::Publisher("127.0.0.1",
@@ -51,9 +54,11 @@ TEST(Serial, buildtest_publisher)
   /// This test case may access a device file that does not exist, so only
   /// verify that it can be built
   try {
-    boost::asio::io_context ioc;
+    protolink::IoContext ioc;
+    std::shared_ptr<protolink::serial_protocol::port> port =
+      protolink::serial_protocol::create_port(ioc, "/dev/ttyACM0", 9600);
     protolink::serial_protocol::Publisher<protolink__std_msgs__String::std_msgs__String> publisher(
-      ioc, "/dev/ttyACM0", 9600);
+      port);
   } catch (...) {
   }
 }
@@ -63,9 +68,11 @@ TEST(Serial, buildtest_subscriber)
   /// This test case may access a device file that does not exist, so only
   /// verify that it can be built
   try {
-    boost::asio::io_context ioc;
+    protolink::IoContext ioc;
+    std::shared_ptr<protolink::serial_protocol::port> port =
+      protolink::serial_protocol::create_port(ioc, "/dev/ttyACM0", 9600);
     protolink::serial_protocol::Subscriber<protolink__std_msgs__String::std_msgs__String, 256>
-      subscriber(ioc, "/dev/ttyACM0", 9600, [](const auto &) {});
+      subscriber(port, [](const auto &) {});
   } catch (...) {
   }
 }

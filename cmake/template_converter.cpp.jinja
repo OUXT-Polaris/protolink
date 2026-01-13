@@ -1,5 +1,7 @@
 #include <{{ conversion_header }}>
 
+namespace {{ conversion_namespace }} {
+
 {% for conversion in conversions %}
 {{ conversion.ros2 }} convert(const {{ conversion.proto }} & message)
 {
@@ -21,9 +23,8 @@
     return ros2_message;
 }
 
-{{ conversion.proto }} convert(const {{ conversion.ros2 }} & message)
+void convert_impl(const {{ conversion.ros2 }} & message, {{ conversion.proto }} & proto_message)
 {
-    {{ conversion.proto }} proto_message;
     {% for builtin_type in conversion.members.builtin_types %}
     proto_message.set_{{builtin_type}}(message.{{builtin_type}});
     {% endfor %}
@@ -37,7 +38,8 @@
         *proto_message.add_{{array_type}}() = convert(data);
     }
     {% endfor %}
-
-    return proto_message;
 }
 {% endfor %}
+
+} // namespace {{ conversion_namespace }}
+

@@ -1,0 +1,23 @@
+name: protolink
+
+services:
+  protolink:
+    build:
+      context: .
+      network: host
+      args:
+        ros_distro: "jazzy"
+    image: protolink/ros:jazzy
+    container_name: protolink-ros-jazzy
+    hostname: protolink
+    working_dir: /home/ros2_ws
+    tty: true
+    privileged: true
+    network_mode: "host"
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - /dev:/dev
+    environment:
+      - DISPLAY=$DISPLAY
+      - QT_X11_NO_MITSHM=1
+      - TERM=xterm-256color
