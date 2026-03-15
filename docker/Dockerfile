@@ -6,6 +6,12 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 SHELL ["/bin/bash", "-c"]
 
+#########################
+## Install common package
+#########################
+RUN apt update && \
+    apt install -y curl wget vim tree
+
 ###############################
 ## Build and Install abseil-cpp
 ###############################

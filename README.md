@@ -10,6 +10,7 @@ Automatic [Protocol Buffers](https://github.com/protocolbuffers/protobuf) genera
 - Generate C++ protocol buffer API from .proto file
 - Generate ANSI-C protocol buffer API from .proto file using [Nanopb](https://github.com/nanopb/nanopb)
 - Generate function to interconversion between ROS2 message and Protocol Buffers
+- Supports custom messages
 
 ## Requirements
 
@@ -40,14 +41,29 @@ source .venv/bin/activate
 python3 -m pip install protobuf grpcio-tools
 ```
 
-Clone repository
+Clone the repository to the ros workspace(eg: ros2_ws/src).
 
 ```bash
-$ git clone https://github.com/OUXT-Polaris/protolink.git
-$ cd protolink
+cd {your_ros_workspace_path: ~/ros2_ws/src}
+git clone https://github.com/OUXT-Polaris/protolink.git
 ```
 
-## How to Using
+Build package
+
+```bash
+cd {your_ros_workspace_path: ~/ros2_ws}
+colcon build --symlink-install --cmake-args -GNinja --packages-select protolink
+```
+
+## QuickStart
+
+Sample code for communication between a microcomputer and a PC similar to ROS2 topics
+PC <--Ethernet--> MCU(Use Teensy4.1 in Sample)
+
+1. [Simple Publish and Subscribe](/docs/1_simple_pub_sub.md)
+2. [Using custom message]
+
+## How to Using (only generate)
 
 > [!NOTE]
 > It is recommended to create an external repository like [protolink_drivers](https://github.com/OUXT-Polaris/protolink_drivers) and add the protolink and geographic_msgs dependencies there.
